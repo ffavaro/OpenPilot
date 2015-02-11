@@ -6,14 +6,19 @@ ifndef OPENPILOT_IS_COOL
     $(error Top level Makefile must be used to build this target)
 endif
 
-DEB_VER			:= $(subst RELEASE-,,$(PACKAGE_LBL))-1
-DEB_DIR			:= package/linux/debian
+DEB_VER              := $(subst RELEASE-,,$(PACKAGE_LBL))
+DEB_RELEASE          := 1
+DEB_ARCH             := $(shell dpkg --print-architecture)
+DEB_NAME             := openpilot
+DEB_NAME_VER         := $(DEB_NAME)-$(DEB_VER)
+DEB_NAME_VER_REL     := $(DEB_NAME)_$(DEB_VER)-$(DEB_RELEASE)
+DEB_PACKAGE_NAME     := $(DEB_NAME_VER_REL)_$(DEB_ARCH)
+DEB_ORIG_SRC_NAME    := $(DEB_NAME)_$(DEB_VER).orig.tar.gz
+DEB_DIR              := package/linux/debian
 
-SED_DATE_STRG		= $(shell date -R)
-SED_SCRIPT		= s/<VERSION>/$(DEB_VER)/;s/<DATE>/$(SED_DATE_STRG)/
+SED_DATE_STRG         = $(shell date -R)
+SED_SCRIPT            = s/<VERSION>/$(DEB_VER)-$(DEB_RELEASE)/;s/<DATE>/$(SED_DATE_STRG)/
 
-DEB_ARCH		:= $(shell dpkg --print-architecture)
-DEB_PACKAGE_NAME	:= openpilot_$(DEB_VER)_$(DEB_ARCH)
 
 .PHONY: package
 package: debian
@@ -26,9 +31,21 @@ package: debian
 	$(V1) rm -r debian
 
 debian: $(DEB_DIR)
+	$(V1) rm -rf debian
 	$(V1) cp -rL $(DEB_DIR) debian
 	$(V1) sed -i -e "$(SED_SCRIPT)" debian/changelog
 
+.PHONY: package_src
+package_src:  $(PACKAGE_DIR)/$(DEB_ORIG_SRC_NAME) $(PACKAGE_DIR)/$(DEB_NAME_VER)
+	$(V1) cd $(PACKAGE_DIR)/$(DEB_NAME_VER) && dpkg-buildpackage -S -us -uc
+
+$(PACKAGE_DIR)/$(DEB_ORIG_SRC_NAME): $(DIST_NAME).gz | $(PACKAGE_DIR)
+	$(V1) cp $(DIST_NAME).gz $(PACKAGE_DIR)/$(DEB_ORIG_SRC_NAME)
+
+$(PACKAGE_DIR)/$(DEB_NAME_VER): $(PACKAGE_DIR)/$(DEB_ORIG_SRC_NAME) debian | $(PACKAGE_DIR)
+	$(V1) cd $(PACKAGE_DIR) && tar -xf $(DEB_ORIG_SRC_NAME)
+	$(V1) mv debian $(PACKAGE_DIR)/OpenPilot
+	$(V1) cd $(PACKAGE_DIR) && rm -rf $(DEB_NAME_VER) && mv OpenPilot $(DEB_NAME_VER)
 
 ##############################
 #
