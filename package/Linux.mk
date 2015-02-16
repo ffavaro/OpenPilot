@@ -6,6 +6,7 @@ ifndef OPENPILOT_IS_COOL
     $(error Top level Makefile must be used to build this target)
 endif
 
+DEB_DIST             := unstable
 DEB_VER              := $(subst RELEASE-,,$(PACKAGE_LBL))
 DEB_RELEASE          := 1
 DEB_ARCH             := $(shell dpkg --print-architecture)
@@ -17,7 +18,7 @@ DEB_ORIG_SRC_NAME    := $(DEB_NAME)_$(DEB_VER).orig.tar.gz
 DEB_DIR              := package/linux/debian
 
 SED_DATE_STRG         = $(shell date -R)
-SED_SCRIPT            = s/<VERSION>/$(DEB_VER)-$(DEB_RELEASE)/;s/<DATE>/$(SED_DATE_STRG)/
+SED_SCRIPT            = s/<VERSION>/$(DEB_VER)-$(DEB_RELEASE)/;s/<DATE>/$(SED_DATE_STRG)/;s/<DIST>/$(DEB_DIST)/
 
 
 .PHONY: package
