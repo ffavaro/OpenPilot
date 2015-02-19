@@ -12,6 +12,9 @@ ifneq ($(shell which dpkg),)
 DEB_DIST             := unstable
 DEB_VER              := $(subst RELEASE-,,$(PACKAGE_LBL))
 DEB_RELEASE          := 1
+ifeq ($(DEB_DIST), trusty)
+DEB_RELEASE          := $(DEB_RELEASE)$(DEB_DIST)1
+endif
 DEB_ARCH             := $(shell dpkg --print-architecture)
 DEB_NAME             := openpilot
 DEB_NAME_VER         := $(DEB_NAME)-$(DEB_VER)
@@ -47,6 +50,7 @@ package: debian
 	$(V1) mv $(ROOT_DIR)/../$(DEB_PACKAGE_NAME).changes $(PACKAGE_DIR)
 	$(V1) rm -r debian
 
+.PHONY: debian
 debian: $(DEB_DIR)
 	$(V1) rm -rf debian
 	$(V1) cp -rL $(DEB_DIR) debian
