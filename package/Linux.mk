@@ -6,6 +6,9 @@ ifndef OPENPILOT_IS_COOL
     $(error Top level Makefile must be used to build this target)
 endif
 
+# Are we using a debian based distro?
+ifneq ($(shell which dpkg),)
+
 DEB_DIST             := unstable
 DEB_VER              := $(subst RELEASE-,,$(PACKAGE_LBL))
 DEB_RELEASE          := 1
@@ -64,6 +67,7 @@ $(PACKAGE_DIR)/$(DEB_NAME_VER): $(PACKAGE_DIR)/$(DEB_ORIG_SRC_NAME) debian | $(P
 	$(V1) mv debian $(PACKAGE_DIR)/OpenPilot
 	$(V1) cd $(PACKAGE_DIR) && rm -rf $(DEB_NAME_VER) && mv OpenPilot $(DEB_NAME_VER)
 
+endif # Debian based distro?
 ##############################
 #
 # Install OpenPilot
