@@ -10,21 +10,21 @@ endif
 ifneq ($(shell which dpkg),)
 
 DEB_DIST             := unstable
-DEB_VER              := $(subst RELEASE-,,$(PACKAGE_LBL))
-DEB_RELEASE          := 1
+# Instead of RELEASE-15.01-RC1 debian wants 15.01~RC1
+UPSTREAM_VER         := $(subst -,~,$(subst RELEASE-,,$(PACKAGE_LBL)))
+DEB_REV              := 1
 ifeq ($(DEB_DIST), trusty)
-DEB_RELEASE          := $(DEB_RELEASE)$(DEB_DIST)1
+DEB_REV              := $(DEB_REV)$(DEB_DIST)1
 endif
-DEB_ARCH             := $(shell dpkg --print-architecture)
 DEB_NAME             := openpilot
-DEB_NAME_VER         := $(DEB_NAME)-$(DEB_VER)
-DEB_NAME_VER_REL     := $(DEB_NAME)_$(DEB_VER)-$(DEB_RELEASE)
-DEB_PACKAGE_NAME     := $(DEB_NAME_VER_REL)_$(DEB_ARCH)
-DEB_ORIG_SRC_NAME    := $(DEB_NAME)_$(DEB_VER).orig.tar.gz
+DEB_ORIG_SRC         := $(PACKAGE_DIR)/$(DEB_NAME)_$(UPSTREAM_VER).orig.tar.gz
+DEB_PACKAGE_DIR      := $(PACKAGE_DIR)/$(DEB_NAME)-$(UPSTREAM_VER)
+DEB_ARCH             := $(shell dpkg --print-architecture)
+DEB_PACKAGE_NAME     := $(DEB_NAME)_$(UPSTREAM_VER)-$(DEB_REV)_$(DEB_ARCH)
 DEB_DIR              := package/linux/debian
 
 SED_DATE_STRG         = $(shell date -R)
-SED_SCRIPT            = s/<VERSION>/$(DEB_VER)-$(DEB_RELEASE)/;s/<DATE>/$(SED_DATE_STRG)/;s/<DIST>/$(DEB_DIST)/
+SED_SCRIPT            = s/<VERSION>/$(UPSTREAM_VER)-$(DEB_REV)/;s/<DATE>/$(SED_DATE_STRG)/;s/<DIST>/$(DEB_DIST)/
 
 # Ubuntu 14.04 (Trusty Tahr) has different names for the qml-modules
 TRUSTY_DEPS_SED      := s/qml-module-qtquick-controls/qtdeclarative5-controls-plugin/g; \
@@ -60,16 +60,16 @@ ifeq ($(DEB_DIST), trusty)
 endif
 
 .PHONY: package_src
-package_src:  $(PACKAGE_DIR)/$(DEB_ORIG_SRC_NAME) $(PACKAGE_DIR)/$(DEB_NAME_VER)
-	$(V1) cd $(PACKAGE_DIR)/$(DEB_NAME_VER) && dpkg-buildpackage -S -us -uc
+package_src:  $(PACKAGE_DIR)/$(DEB_ORIG_SRC_NAME) $(PACKAGE_DIR)/$(DEB_PACKAGE_DIR)
+	$(V1) cd $(PACKAGE_DIR)/$(DEB_PACKAGE_DIR) && dpkg-buildpackage -S -us -uc
 
-$(PACKAGE_DIR)/$(DEB_ORIG_SRC_NAME): $(DIST_NAME).gz | $(PACKAGE_DIR)
-	$(V1) cp $(DIST_NAME).gz $(PACKAGE_DIR)/$(DEB_ORIG_SRC_NAME)
+$(DEB_ORIG_SRC): $(DIST_NAME).gz | $(PACKAGE_DIR)
+	$(V1) cp $(DIST_NAME).gz $(DEB_ORIG_SRC)
 
-$(PACKAGE_DIR)/$(DEB_NAME_VER): $(PACKAGE_DIR)/$(DEB_ORIG_SRC_NAME) debian | $(PACKAGE_DIR)
-	$(V1) cd $(PACKAGE_DIR) && tar -xf $(DEB_ORIG_SRC_NAME)
-	$(V1) mv debian $(PACKAGE_DIR)/OpenPilot
-	$(V1) cd $(PACKAGE_DIR) && rm -rf $(DEB_NAME_VER) && mv OpenPilot $(DEB_NAME_VER)
+$(DEB_PACKAGE_DIR): $(DEB_ORIG_SRC) debian | $(PACKAGE_DIR)
+	$(V1) tar -xf $(DEB_ORIG_SRC_NAME) -C $(PACKAGE_DIR)
+	$(V1) mv debian $(PACKAGE_DIR)/$(PACKAGE_NAME)
+	$(V1) rm -rf $(DEB_PACKAGE_DIR) && mv $(PACKAGE_DIR)/$(PACKAGE_NAME) $(DEB_PACKAGE_DIR)
 
 endif # Debian based distro?
 ##############################
